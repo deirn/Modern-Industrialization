@@ -24,73 +24,53 @@
 package aztech.modern_industrialization.compat.waila;
 
 import aztech.modern_industrialization.pipes.MIPipes;
-import aztech.modern_industrialization.pipes.impl.PipeBlockEntity;
-import aztech.modern_industrialization.pipes.impl.PipeVoxelShape;
+import aztech.modern_industrialization.pipes.api.PipeNetworkType;
 import aztech.modern_industrialization.util.FluidHelper;
 import aztech.modern_industrialization.util.NbtHelper;
 import mcp.mobius.waila.api.*;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.*;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Overrides the name of the pipes in Waila to prevent
  * "block.modern_industrialization.pipe" being displayed.
  */
 public class PipeComponentProvider implements IBlockComponentProvider {
-
-    private @Nullable PipeVoxelShape getHitShape(IBlockAccessor accessor) {
-        PipeBlockEntity pipe = accessor.getBlockEntity();
-        Vec3 hitPos = accessor.getHitResult().getLocation();
-        BlockPos blockPos = accessor.getPosition();
-        for (PipeVoxelShape partShape : pipe.getPartShapes()) {
-            Vec3 posInBlock = hitPos.subtract(blockPos.getX(), blockPos.getY(), blockPos.getZ());
-            for (AABB box : partShape.shape.toAabbs()) {
-                // move slightly towards box center
-                Vec3 dir = box.getCenter().subtract(posInBlock).normalize().scale(1e-4);
-                if (box.contains(posInBlock.add(dir))) {
-                    return partShape;
-                }
-            }
-        }
-        return null;
-    }
+    private static final boolean HAS_MEGANE = FabricLoader.getInstance().isModLoaded("megane-runtime");
 
     @Override
     public void appendHead(ITooltip tooltip, IBlockAccessor accessor, IPluginConfig config) {
-        PipeVoxelShape shape = getHitShape(accessor);
-        if (shape != null) {
-            Component text = new TextComponent(IWailaConfig.get().getFormatting().formatBlockName(
-                    I18n.get(MIPipes.INSTANCE.getPipeItem(shape.type).getDescriptionId())));
-            tooltip.set(WailaConstants.OBJECT_NAME_TAG, text);
+        CompoundTag data = accessor.getServerData();
+        if (data.contains("type")) {
+            PipeNetworkType type = PipeNetworkType.get(new ResourceLocation(data.getString("type")));
+            Component text = IWailaConfig.get().getFormatter().blockName(I18n.get(MIPipes.INSTANCE.getPipeItem(type).getDescriptionId()));
+            tooltip.setLine(WailaConstants.OBJECT_NAME_TAG, text);
         }
     }
 
     @Override
     public void appendBody(ITooltip tooltip, IBlockAccessor accessor, IPluginConfig config) {
-        PipeVoxelShape shape = getHitShape(accessor);
-        if (shape != null) {
-            CompoundTag tag = accessor.getServerData().getCompound(shape.type.getIdentifier().toString());
-            Style style = Style.EMPTY.withColor(TextColor.fromRgb(0xa9a9a9)).withItalic(true);
+        CompoundTag data = accessor.getServerData();
+        if (!HAS_MEGANE && data.contains("fluid")) {
+            FluidVariant fluid = NbtHelper.getFluidCompatible(data, "fluid");
+            long amount = data.getLong("amount");
+            int capacity = data.getInt("capacity");
+            FluidHelper.getTooltipForFluidStorage(fluid, amount, capacity).forEach(tooltip::addLine);
+        }
 
-            if (tag.contains("fluid")) {
-                FluidVariant fluid = NbtHelper.getFluidCompatible(tag, "fluid");
-                long amount = tag.getLong("amount");
-                int capacity = tag.getInt("capacity");
-                FluidHelper.getTooltipForFluidStorage(fluid, amount, capacity).forEach(tooltip::add);
-            }
+        if (data.contains("eu")) {
+            String tier = data.getString("tier");
+            tooltip.addLine(new TranslatableComponent("text.modern_industrialization.cable_tier_" + tier));
 
-            if (tag.contains("eu")) {
-                long eu = tag.getLong("eu");
-                long maxEu = tag.getLong("maxEu");
-                String tier = tag.getString("tier");
-                tooltip.add(new TranslatableComponent("text.modern_industrialization.cable_tier_" + tier));
-                tooltip.add(new TranslatableComponent("text.modern_industrialization.energy_bar", eu, maxEu).setStyle(style));
+            if (!HAS_MEGANE) {
+                long eu = data.getLong("eu");
+                long maxEu = data.getLong("maxEu");
+                tooltip.addLine(new TranslatableComponent("text.modern_industrialization.energy_bar", eu, maxEu));
             }
         }
     }

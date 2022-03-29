@@ -28,32 +28,29 @@ import aztech.modern_industrialization.pipes.electricity.ElectricityNetworkNode;
 import aztech.modern_industrialization.pipes.fluid.FluidNetworkNode;
 import aztech.modern_industrialization.pipes.impl.PipeBlockEntity;
 import aztech.modern_industrialization.util.NbtHelper;
+import mcp.mobius.waila.api.IPluginConfig;
+import mcp.mobius.waila.api.IServerAccessor;
 import mcp.mobius.waila.api.IServerDataProvider;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 
 public class PipeDataProvider implements IServerDataProvider<PipeBlockEntity> {
     @Override
-    public void appendServerData(CompoundTag data, ServerPlayer player, Level world, PipeBlockEntity pipe) {
-        for (PipeNetworkNode node : pipe.getNodes()) {
-            CompoundTag pipeData = new CompoundTag();
+    public void appendServerData(CompoundTag data, IServerAccessor<PipeBlockEntity> accessor, IPluginConfig config) {
+        PipeNetworkNode node = PipeProviderHelper.getHitNode(accessor.getTarget(), accessor.getPlayer(), accessor.getHitResult());
+        if (node != null) {
+            data.putString("type", node.getType().getIdentifier().toString());
 
-            if (node instanceof FluidNetworkNode) {
-                FluidNetworkNode fluidNode = (FluidNetworkNode) node;
-                pipeData.putLong("amount", fluidNode.getAmount());
-                pipeData.putInt("capacity", fluidNode.getCapacity());
-                NbtHelper.putFluid(pipeData, "fluid", fluidNode.getFluid());
+            if (node instanceof FluidNetworkNode fluidNode) {
+                data.putLong("amount", fluidNode.getAmount());
+                data.putInt("capacity", fluidNode.getCapacity());
+                NbtHelper.putFluid(data, "fluid", fluidNode.getFluid());
             }
 
-            if (node instanceof ElectricityNetworkNode) {
-                ElectricityNetworkNode electricityNode = (ElectricityNetworkNode) node;
-                pipeData.putLong("eu", electricityNode.getEu());
-                pipeData.putLong("maxEu", electricityNode.getMaxEu());
-                pipeData.putString("tier", electricityNode.getTier().toString());
+            if (node instanceof ElectricityNetworkNode electricityNode) {
+                data.putLong("eu", electricityNode.getEu());
+                data.putLong("maxEu", electricityNode.getMaxEu());
+                data.putString("tier", electricityNode.getTier().toString());
             }
-
-            data.put(node.getType().getIdentifier().toString(), pipeData);
         }
     }
 }

@@ -23,21 +23,44 @@
  */
 package aztech.modern_industrialization.compat.megane.provider;
 
-import aztech.modern_industrialization.fluid.CraftingFluid;
-import lol.bai.megane.api.provider.FluidInfoProvider;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
+import aztech.modern_industrialization.compat.waila.PipeProviderHelper;
+import aztech.modern_industrialization.pipes.api.PipeNetworkNode;
+import aztech.modern_industrialization.pipes.fluid.FluidNetworkNode;
+import aztech.modern_industrialization.pipes.impl.PipeBlockEntity;
+import lol.bai.megane.api.provider.FluidProvider;
+import net.minecraft.world.level.material.Fluid;
+import org.jetbrains.annotations.Nullable;
 
-public class CraftingFluidInfoProvider extends FluidInfoProvider<CraftingFluid> {
+public class PipeFluidProvider extends FluidProvider<PipeBlockEntity> {
+    private PipeNetworkNode node;
 
     @Override
-    public int getColor() {
-        return getObject().color;
+    protected void init() {
+        node = PipeProviderHelper.getHitNode(getObject(), getPlayer(), getHitResult());
     }
 
     @Override
-    public Component getName() {
-        return getObject().block.getName().setStyle(Style.EMPTY);
+    public boolean hasFluids() {
+        return node instanceof FluidNetworkNode;
     }
 
+    @Override
+    public int getSlotCount() {
+        return 1;
+    }
+
+    @Override
+    public @Nullable Fluid getFluid(int slot) {
+        return ((FluidNetworkNode) node).getFluid().getFluid();
+    }
+
+    @Override
+    public double getStored(int slot) {
+        return droplets(((FluidNetworkNode) node).getAmount());
+    }
+
+    @Override
+    public double getMax(int slot) {
+        return droplets(((FluidNetworkNode) node).getCapacity());
+    }
 }

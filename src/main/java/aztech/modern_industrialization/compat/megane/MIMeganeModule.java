@@ -34,6 +34,7 @@ import aztech.modern_industrialization.compat.megane.holder.MultiblockInventoryC
 import aztech.modern_industrialization.compat.megane.provider.*;
 import aztech.modern_industrialization.fluid.CraftingFluid;
 import aztech.modern_industrialization.machines.MachineBlockEntity;
+import aztech.modern_industrialization.pipes.impl.PipeBlockEntity;
 import lol.bai.megane.api.MeganeModule;
 import lol.bai.megane.api.registry.ClientRegistrar;
 import lol.bai.megane.api.registry.CommonRegistrar;
@@ -43,11 +44,13 @@ public class MIMeganeModule implements MeganeModule {
     public void registerCommon(CommonRegistrar registrar) {
         registrar.addEnergy(EnergyListComponentHolder.class, new ComponentListEnergyProvider());
         registrar.addEnergy(EnergyComponentHolder.class, new ComponentEnergyProvider());
+        registrar.addEnergy(PipeBlockEntity.class, new PipeEnergyProvider());
 
         registrar.addFluid(MultiblockInventoryComponentHolder.class, new MultiblockFluidProvider());
         registrar.addFluid(TankBlockEntity.class, new TankFluidProvider());
         registrar.addFluid(CreativeTankBlockEntity.class, new CreativeTankFluidProvider());
         registrar.addFluid(MachineBlockEntity.class, new MachineFluidProvider());
+        registrar.addFluid(PipeBlockEntity.class, new PipeFluidProvider());
 
         registrar.addItem(MultiblockInventoryComponentHolder.class, new MultiblockItemProvider());
         registrar.addItem(AbstractStorageBlockEntity.class, new StorageItemProvider());

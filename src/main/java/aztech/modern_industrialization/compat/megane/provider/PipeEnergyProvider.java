@@ -23,21 +23,32 @@
  */
 package aztech.modern_industrialization.compat.megane.provider;
 
-import aztech.modern_industrialization.fluid.CraftingFluid;
-import lol.bai.megane.api.provider.FluidInfoProvider;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
+import aztech.modern_industrialization.compat.waila.PipeProviderHelper;
+import aztech.modern_industrialization.pipes.api.PipeNetworkNode;
+import aztech.modern_industrialization.pipes.electricity.ElectricityNetworkNode;
+import aztech.modern_industrialization.pipes.impl.PipeBlockEntity;
+import lol.bai.megane.api.provider.EnergyProvider;
 
-public class CraftingFluidInfoProvider extends FluidInfoProvider<CraftingFluid> {
+public class PipeEnergyProvider extends EnergyProvider<PipeBlockEntity> {
+    private PipeNetworkNode node;
 
     @Override
-    public int getColor() {
-        return getObject().color;
+    protected void init() {
+        node = PipeProviderHelper.getHitNode(getObject(), getPlayer(), getHitResult());
     }
 
     @Override
-    public Component getName() {
-        return getObject().block.getName().setStyle(Style.EMPTY);
+    public boolean hasEnergy() {
+        return node instanceof ElectricityNetworkNode;
     }
 
+    @Override
+    public long getStored() {
+        return ((ElectricityNetworkNode) node).getEu();
+    }
+
+    @Override
+    public long getMax() {
+        return ((ElectricityNetworkNode) node).getMaxEu();
+    }
 }
